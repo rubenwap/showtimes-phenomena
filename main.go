@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"github.com/gocolly/colly"
+	"log"
 	"strings"
-	"encoding/json"
+	"time"
 )
 
 // Movie holds the movie object where the scraped films will be stored
@@ -16,26 +16,26 @@ type Movie struct {
 	Date    time.Time
 }
 
-func main() {
+func scrape() []Movie {
 
-daysTranslate := strings.NewReplacer(
-    "Lunes", "Monday",
-    "Martes", "Tuesday",
-	"Miercoles", "Wednesday",
-	"Miércoles", "Wednesday",
-    "Jueves", "Thursday",
-    "Viernes", "Friday",
-    "Sabado", "Saturday",
-    "Sábado", "Saturday",
-    "Domingo", "Sunday",
-)
+	daysTranslate := strings.NewReplacer(
+		"Lunes", "Monday",
+		"Martes", "Tuesday",
+		"Miercoles", "Wednesday",
+		"Miércoles", "Wednesday",
+		"Jueves", "Thursday",
+		"Viernes", "Friday",
+		"Sabado", "Saturday",
+		"Sábado", "Saturday",
+		"Domingo", "Sunday",
+	)
 
 	movies := []Movie{}
 	c := colly.NewCollector()
 	detailCollector := c.Clone()
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+		log.Println("Visiting", r.URL)
 	})
 
 	c.OnHTML(".event-titulo", func(e *colly.HTMLElement) {
@@ -47,7 +47,7 @@ daysTranslate := strings.NewReplacer(
 	detailCollector.OnHTML("body", func(e *colly.HTMLElement) {
 
 		if e.DOM.Find(".pase-hora").Length() > 0 {
-			
+
 			dateStr := daysTranslate.Replace(e.DOM.Find(".pase-fecha").First().Text())
 			dateTime := strings.Fields(e.DOM.Find(".pase-hora").First().Text())[0]
 			movie := Movie{}
@@ -56,7 +56,7 @@ daysTranslate := strings.NewReplacer(
 			movie.Theatre = "Phenomena Experience"
 
 			if t, err := time.Parse("Monday, 02/01/2006 15:04h", fmt.Sprintf("%s %s", dateStr, dateTime)); err != nil {
-				fmt.Printf("Error: %s\n", err)				
+				log.Printf("Error: %s\n", err)
 			} else {
 				movie.Date = t.Add(-time.Hour * 2)
 			}
@@ -64,12 +64,14 @@ daysTranslate := strings.NewReplacer(
 		}
 	})
 	c.OnScraped(func(r *colly.Response) {
-		if data, err := json.Marshal(movies); err != nil {
-            fmt.Println(err)
-        } else {
-            fmt.Println(string(data))
-        }
-		})
+		log.Println("Scrape finished")
+	})
 
 	c.Visit("http://www.phenomena-experience.com/programacion-mensual/todo.html")
+
+	return movies
+}
+
+func main() {
+	log.Println(scrape())
 }
