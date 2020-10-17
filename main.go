@@ -1,4 +1,4 @@
-package main
+package phenomena
 
 import (
 	"fmt"
@@ -70,8 +70,4 @@ func scrape() []Movie {
 	c.Visit("http://www.phenomena-experience.com/programacion-mensual/todo.html")
 
 	return movies
-}
-
-func main() {
-	log.Println(scrape())
 }
